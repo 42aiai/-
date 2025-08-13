@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>座布団ゲーム</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="lobby" class="screen">
+        <h1>座布団ゲーム</h1>
+        <div class="lobby-actions">
+            <button id="create-room-btn">部屋を作る</button>
+            <div class="join-room">
+                <input type="text" id="room-id-input" placeholder="6桁の部屋番号" maxlength="6" autocomplete="off">
+                <button id="join-room-btn">部屋に入る</button>
+            </div>
+        </div>
+        <p id="error-message" class="error"></p>
+    </div>
+
+    <div id="game-room" class="screen" style="display:none;">
+        <header>
+            <div id="room-info">部屋番号: <span id="room-id-display"></span></div>
+            <div id="player-list-container">
+                <h3>参加者</h3>
+                <ul id="player-list"></ul>
+            </div>
+        </header>
+
+        <main id="game-board">
+            <div id="game-status">
+                <p>現在のコール: <span id="current-call"></span></p>
+                <p>場の枚数: <span id="field-card-count"></span></p>
+                <p>手番: <span id="turn-player-name"></span></p>
+            </div>
+            <div id="action-buttons">
+                <button id="play-card-btn" disabled>出す</button>
+                <button id="challenge-btn" disabled>座布団！</button>
+            </div>
+        </main>
+
+        <footer>
+            <div id="my-hand-container">
+                <h3>自分の手札 (<span id="my-card-count">0</span>枚)</h3>
+                <div id="my-hand" class="hand"></div>
+            </div>
+        </footer>
+
+        <div id="game-over-overlay" style="display:none;">
+            <div class="game-over-box">
+                <h2 id="winner-announcement"></h2>
+                <button id="new-game-btn">新しいゲームを始める</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast"></div>
+</body>
+<script src="app.js"></script>
+</html>
