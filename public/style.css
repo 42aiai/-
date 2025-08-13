@@ -1,0 +1,152 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    margin: 0;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.screen {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 100%;
+    max-width: 900px;
+    box-sizing: border-box;
+}
+
+#lobby { text-align: center; }
+#lobby h1 { margin-bottom: 2rem; color: #4a4a4a; }
+.lobby-actions button, .lobby-actions input {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    margin: 0.5rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    transition: all 0.2s ease;
+}
+.lobby-actions button { background-color: #5E5DF0; color: white; border: none; cursor: pointer; }
+.lobby-actions button:hover { background-color: #4a4acc; }
+.join-room { margin-top: 1rem; }
+.error { color: #d9534f; margin-top: 1rem; min-height: 1.2em; }
+
+#game-room header, #game-room footer { padding-bottom: 1rem; margin-bottom: 1rem; }
+#game-room header { border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+#room-info { font-weight: bold; }
+
+#player-list { list-style: none; padding: 0; margin: 0; }
+#player-list li { padding: 0.5rem; border-radius: 4px; transition: background-color 0.3s; }
+#player-list li.is-turn { background-color: #fffbe6; font-weight: bold; border-left: 4px solid #f0ad4e; padding-left: 1rem; }
+#player-list li.is-self::after { content: ' ★'; color: #f0ad4e; font-weight: normal; }
+
+#game-board { text-align: center; padding: 1.5rem; background-color: #e8f5e9; border-radius: 8px; }
+#game-status p { margin: 0.5rem 0; font-size: 1.2rem; }
+#current-call, #field-card-count { font-weight: bold; font-size: 1.5rem; color: #28a745; }
+#turn-player-name { font-weight: bold; }
+
+#action-buttons button { padding: 0.8rem 1.5rem; font-size: 1.1rem; margin: 1rem 0.5rem; cursor: pointer; border-radius: 5px; border: none; color: white; transition: background-color 0.2s; }
+#play-card-btn { background-color: #28a745; }
+#challenge-btn { background-color: #d9534f; }
+#action-buttons button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+#my-hand-container { min-height: 140px; }
+.hand { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; padding: 1rem; }
+.card {
+    border: 1px solid #999;
+    border-radius: 6px;
+    width: 70px;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    user-select: none;
+    background-color: #fff;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s;
+    position: relative;
+}
+.card.disabled { cursor: not-allowed; background-color: #e9ecef; }
+.card:not(.disabled):hover { transform: translateY(-5px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+.card.selected { border-color: #5E5DF0; border-width: 3px; transform: translateY(-10px); }
+.card .suit { font-size: 0.8rem; position: absolute; top: 5px; left: 5px; }
+.card.is-joker { font-weight: bold; color: #d9534f; }
+
+#toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 25px;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.5s, visibility 0.5s;
+    z-index: 1000;
+}
+#toast.show { visibility: visible; opacity: 1; }
+
+#game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+.game-over-box { background-color: white; padding: 2rem 3rem; border-radius: 8px; text-align: center; }
+#new-game-btn { background-color: #5E5DF0; color: white; border: none; cursor: pointer; padding: 0.75rem 1.5rem; font-size: 1rem; border-radius: 5px; margin-top: 1rem; }
+/* style.cssの末尾に追加 */
+
+#challenge-timer {
+    margin-top: 1rem;
+    font-size: 1.1rem;
+    color: #d9534f;
+    font-weight: bold;
+}
+
+#host-settings {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+#host-settings h4 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.setting-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.setting-item label {
+    font-size: 0.9rem;
+}
+
+.setting-item select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    font-size: 0.9rem;
+}
