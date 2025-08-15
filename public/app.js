@@ -1,7 +1,8 @@
 // =================================================================================
 // WebSocket セットアップ
 // =================================================================================
-const ws = new WebSocket(`wss://${window.location.host}`);
+const wsProtocol = window.location.protocol === 'https' ? 'wss:' : 'ws:';
+const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
 
 // =================================================================================
 // グローバル状態管理
@@ -14,7 +15,7 @@ let state = {
     myHand: [],
     creatorId: null,
     settings: {},
-    challengeTimerInterval: null, // タイマーのIDを保持
+    challengeTimerInterval: null,
 };
 
 // =================================================================================
@@ -22,6 +23,7 @@ let state = {
 // =================================================================================
 const lobby = document.getElementById('lobby');
 const gameRoom = document.getElementById('game-room');
+// ... (他のDOM要素の宣言は変更なし)
 const createRoomBtn = document.getElementById('create-room-btn');
 const joinRoomBtn = document.getElementById('join-room-btn');
 const roomIdInput = document.getElementById('room-id-input');
@@ -45,6 +47,7 @@ const challengeTimer = document.getElementById('challenge-timer');
 const challengeTimerSeconds = document.getElementById('challenge-timer-seconds');
 const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
+
 // =================================================================================
 // UI更新関数
 // =================================================================================
@@ -59,7 +62,7 @@ function updateUI(data) {
     state.settings = data.settings;
     roomIdDisplay.textContent = data.roomId;
 
-    // Player List
+    // Player List (変更なし)
     playerList.innerHTML = '';
     Object.entries(data.players).forEach(([pid, player]) => {
         const li = document.createElement('li');
@@ -69,13 +72,12 @@ function updateUI(data) {
         playerList.appendChild(li);
     });
 
-    // Challenge Timer
+    // Challenge Timer (変更なし)
     if (state.challengeTimerInterval) {
         clearInterval(state.challengeTimerInterval);
         state.challengeTimerInterval = null;
     }
     challengeTimer.style.display = 'none';
-
     if (data.status === 'playing' && data.gameState && data.gameState.challengePhase) {
         const amIChallenged = data.gameState.lastPlayerId === state.playerId;
         if (!amIChallenged) {
@@ -92,24 +94,23 @@ function updateUI(data) {
         }
     }
 
-    // Game Over / Waiting Screen
+    // Game Over / Waiting Screen (変更なし)
     if (data.status === 'waiting' || data.status === 'finished') {
         gameOverOverlay.style.display = 'flex';
         if (state.playerId === state.creatorId) {
             hostSettings.style.display = 'block';
             challengeTimeoutSelect.value = state.settings.challengeTimeoutSeconds;
-            challengeTimeoutSelect.disabled = (data.status === 'finished'); // ゲーム終了後は変更不可
+            challengeTimeoutSelect.disabled = (data.status === 'finished');
             newGameBtn.style.display = 'block';
             newGameBtn.disabled = (data.status === 'waiting' && Object.keys(data.players).length < 2);
         } else {
             hostSettings.style.display = 'none';
             newGameBtn.style.display = 'none';
         }
-
         if (data.status === 'waiting') {
             winnerAnnouncement.textContent = 'プレイヤーを待っています...';
             newGameBtn.textContent = 'ゲーム開始';
-        } else { // finished
+        } else {
             winnerAnnouncement.textContent = `勝者: ${data.players[data.gameState.winner].name}!`;
             newGameBtn.textContent = '新しいゲームを始める';
         }
@@ -128,21 +129,32 @@ function updateUI(data) {
         playCardBtn.disabled = !isMyTurn || state.selectedCards.length === 0 || gs.challengePhase;
         challengeBtn.disabled = (gs.lastPlayerId === state.playerId) || !gs.challengePhase;
 
+        // ▼▼▼ ここからが最重要修正点 ▼▼▼
         if (gs.challengeResult) {
-            const { challengerName, challengedName, wasLie, loserName } = gs.challengeResult;
-            const msg = wasLie
-                ? `座布団成功！ ${challengerName}の指摘通り！ ${loserName}が場のカードを全て引き取ります。`
-                : `座布団失敗… ${challengedName}は正直でした！ ${loserName}が場のカードを全て引き取ります。`;
+            const { challengerName, wasLie, loserName } = gs.challengeResult;
+            let msg;
+            if (wasLie) {
+                // チャレンジ成功（嘘だった）場合のメッセージ
+                msg = `座布団成功！ ${challengerName}の指摘通り嘘でした！ ${loserName}が場のカードを全て引き取ります。`;
+            } else {
+                // チャレンジ失敗（正直だった）場合のメッセージ
+                msg = `座布団失敗… プレイは正直でした！ ${loserName}が場のカードを全て引き取ります。`;
+            }
             showToast(msg, 4000);
         }
+        // ▲▲▲ ここまでが最重要修正点 ▲▲▲
     }
 
-    // My Hand
+    // My Hand (変更なし)
     state.myHand = data.myHand || [];
     myCardCountEl.textContent = state.myHand.length;
     renderHand(data.status === 'playing' && data.gameState.turnPlayerId === state.playerId && !data.gameState.challengePhase);
 }
 
+
+function renderHand(isMyTurn) { /* ... 変更なし ... */ }
+function toggleCardSelection(cardId, cardEl) { /* ... 変更なし ... */ }
+// ... (以降の関数は全て変更なし)
 function renderHand(isMyTurn) {
     myHandContainer.innerHTML = '';
     state.myHand.sort((a,b) => (a.isJoker ? 14 : a.rank) - (b.isJoker ? 14 : b.rank) || a.suit.localeCompare(b.suit)).forEach(card => {
@@ -150,16 +162,12 @@ function renderHand(isMyTurn) {
         cardEl.classList.add('card');
         cardEl.dataset.cardId = card.id;
         if(card.isJoker) cardEl.classList.add('is-joker');
-
         const rank = card.isJoker ? 'JOKER' : RANKS[card.rank - 1];
         const suitChar = {s: '♠', h: '♥', d: '♦', c: '♣', j: ''}[card.suit];
         if(['h', 'd'].includes(card.suit) || card.isJoker) cardEl.style.color = 'red';
-        
         cardEl.innerHTML = `<span>${rank}</span><span class="suit">${suitChar}</span>`;
-        
         if (!isMyTurn) cardEl.classList.add('disabled');
         if (state.selectedCards.includes(card.id)) cardEl.classList.add('selected');
-
         cardEl.addEventListener('click', () => {
             if (!isMyTurn) return;
             toggleCardSelection(card.id, cardEl);
@@ -167,7 +175,6 @@ function renderHand(isMyTurn) {
         myHandContainer.appendChild(cardEl);
     });
 }
-
 function toggleCardSelection(cardId, cardEl) {
     const index = state.selectedCards.indexOf(cardId);
     if (index > -1) {
@@ -183,27 +190,20 @@ function toggleCardSelection(cardId, cardEl) {
     }
     playCardBtn.disabled = state.selectedCards.length === 0;
 }
-
-// =================================================================================
-// WebSocket イベントリスナー
-// =================================================================================
 function sendMessage(type, payload = {}) {
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type, payload }));
     }
 }
-
 ws.onopen = () => console.log('Connected to server');
 ws.onclose = () => showToast('サーバーとの接続が切れました。ページをリロードしてください。');
 ws.onerror = (err) => {
     console.error('WebSocket Error:', err);
     showToast('接続エラーが発生しました。');
 };
-
 ws.onmessage = (event) => {
     try {
         const { type, payload } = JSON.parse(event.data);
-
         switch (type) {
             case 'roomCreated':
             case 'joinedRoom':
@@ -223,14 +223,9 @@ ws.onmessage = (event) => {
         console.error("Failed to parse message from server:", event.data, error);
     }
 };
-
-// =================================================================================
-// フロントエンド イベントリスナー
-// =================================================================================
 createRoomBtn.addEventListener('click', () => {
     sendMessage('createRoom', { playerId: state.playerId, playerName: state.playerName });
 });
-
 joinRoomBtn.addEventListener('click', () => {
     const roomId = roomIdInput.value.trim().toUpperCase();
     if (roomId.length !== 6) {
@@ -239,7 +234,6 @@ joinRoomBtn.addEventListener('click', () => {
     }
     sendMessage('joinRoom', { roomId, playerId: state.playerId, playerName: state.playerName });
 });
-
 playCardBtn.addEventListener('click', () => {
     if (state.selectedCards.length > 0) {
         sendMessage('playCards', { cardIds: state.selectedCards });
@@ -247,30 +241,22 @@ playCardBtn.addEventListener('click', () => {
         playCardBtn.disabled = true;
     }
 });
-
 challengeBtn.addEventListener('click', () => {
     sendMessage('challenge');
 });
-
 newGameBtn.addEventListener('click', () => {
     if (state.playerId === state.creatorId) {
         sendMessage('startGame');
     }
 });
-
 challengeTimeoutSelect.addEventListener('change', (e) => {
     sendMessage('changeSettings', {
         challengeTimeoutSeconds: e.target.value
     });
 });
-
-// =================================================================================
-// 初期化
-// =================================================================================
 window.addEventListener('load', () => {
     state.playerId = localStorage.getItem('zabutonPlayerId') || 'player_' + Math.random().toString(36).substring(2, 9);
     localStorage.setItem('zabutonPlayerId', state.playerId);
-    
     let storedName = localStorage.getItem('zabutonPlayerName');
     if (!storedName) {
         storedName = prompt("あなたの名前を入力してください:", "プレイヤー" + state.playerId.substring(7,11)) || "名無しさん";
