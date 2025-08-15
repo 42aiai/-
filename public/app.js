@@ -1,8 +1,8 @@
 // =================================================================================
 // WebSocket セットアップ
 // =================================================================================
-const wsProtocol = window.location.protocol === 'https' ? 'wss:' : 'ws:';
-const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
+// Render.comは常にHTTPSなので、WebSocketも安全な 'wss:' を決め打ちで使う
+const ws = new WebSocket(`wss://${window.location.host}`);
 
 // =================================================================================
 // グローバル状態管理
@@ -23,7 +23,6 @@ let state = {
 // =================================================================================
 const lobby = document.getElementById('lobby');
 const gameRoom = document.getElementById('game-room');
-// ... (他のDOM要素の宣言は変更なし)
 const createRoomBtn = document.getElementById('create-room-btn');
 const joinRoomBtn = document.getElementById('join-room-btn');
 const roomIdInput = document.getElementById('room-id-input');
@@ -62,7 +61,6 @@ function updateUI(data) {
     state.settings = data.settings;
     roomIdDisplay.textContent = data.roomId;
 
-    // Player List (変更なし)
     playerList.innerHTML = '';
     Object.entries(data.players).forEach(([pid, player]) => {
         const li = document.createElement('li');
@@ -72,7 +70,6 @@ function updateUI(data) {
         playerList.appendChild(li);
     });
 
-    // Challenge Timer (変更なし)
     if (state.challengeTimerInterval) {
         clearInterval(state.challengeTimerInterval);
         state.challengeTimerInterval = null;
@@ -94,7 +91,6 @@ function updateUI(data) {
         }
     }
 
-    // Game Over / Waiting Screen (変更なし)
     if (data.status === 'waiting' || data.status === 'finished') {
         gameOverOverlay.style.display = 'flex';
         if (state.playerId === state.creatorId) {
@@ -118,43 +114,32 @@ function updateUI(data) {
         gameOverOverlay.style.display = 'none';
     }
 
-    // Game Board
     if (data.status === 'playing') {
         const gs = data.gameState;
         currentCallEl.textContent = RANKS[gs.currentCall - 1];
         fieldCardCountEl.textContent = gs.fieldCardCount;
         turnPlayerNameEl.textContent = data.players[gs.turnPlayerId].name;
-
         const isMyTurn = gs.turnPlayerId === state.playerId;
         playCardBtn.disabled = !isMyTurn || state.selectedCards.length === 0 || gs.challengePhase;
         challengeBtn.disabled = (gs.lastPlayerId === state.playerId) || !gs.challengePhase;
 
-        // ▼▼▼ ここからが最重要修正点 ▼▼▼
         if (gs.challengeResult) {
             const { challengerName, wasLie, loserName } = gs.challengeResult;
             let msg;
             if (wasLie) {
-                // チャレンジ成功（嘘だった）場合のメッセージ
                 msg = `座布団成功！ ${challengerName}の指摘通り嘘でした！ ${loserName}が場のカードを全て引き取ります。`;
             } else {
-                // チャレンジ失敗（正直だった）場合のメッセージ
                 msg = `座布団失敗… プレイは正直でした！ ${loserName}が場のカードを全て引き取ります。`;
             }
             showToast(msg, 4000);
         }
-        // ▲▲▲ ここまでが最重要修正点 ▲▲▲
     }
 
-    // My Hand (変更なし)
     state.myHand = data.myHand || [];
     myCardCountEl.textContent = state.myHand.length;
     renderHand(data.status === 'playing' && data.gameState.turnPlayerId === state.playerId && !data.gameState.challengePhase);
 }
 
-
-function renderHand(isMyTurn) { /* ... 変更なし ... */ }
-function toggleCardSelection(cardId, cardEl) { /* ... 変更なし ... */ }
-// ... (以降の関数は全て変更なし)
 function renderHand(isMyTurn) {
     myHandContainer.innerHTML = '';
     state.myHand.sort((a,b) => (a.isJoker ? 14 : a.rank) - (b.isJoker ? 14 : b.rank) || a.suit.localeCompare(b.suit)).forEach(card => {
@@ -175,6 +160,7 @@ function renderHand(isMyTurn) {
         myHandContainer.appendChild(cardEl);
     });
 }
+
 function toggleCardSelection(cardId, cardEl) {
     const index = state.selectedCards.indexOf(cardId);
     if (index > -1) {
@@ -190,17 +176,20 @@ function toggleCardSelection(cardId, cardEl) {
     }
     playCardBtn.disabled = state.selectedCards.length === 0;
 }
+
 function sendMessage(type, payload = {}) {
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type, payload }));
     }
 }
+
 ws.onopen = () => console.log('Connected to server');
 ws.onclose = () => showToast('サーバーとの接続が切れました。ページをリロードしてください。');
 ws.onerror = (err) => {
     console.error('WebSocket Error:', err);
     showToast('接続エラーが発生しました。');
 };
+
 ws.onmessage = (event) => {
     try {
         const { type, payload } = JSON.parse(event.data);
@@ -223,9 +212,11 @@ ws.onmessage = (event) => {
         console.error("Failed to parse message from server:", event.data, error);
     }
 };
+
 createRoomBtn.addEventListener('click', () => {
     sendMessage('createRoom', { playerId: state.playerId, playerName: state.playerName });
 });
+
 joinRoomBtn.addEventListener('click', () => {
     const roomId = roomIdInput.value.trim().toUpperCase();
     if (roomId.length !== 6) {
@@ -234,6 +225,7 @@ joinRoomBtn.addEventListener('click', () => {
     }
     sendMessage('joinRoom', { roomId, playerId: state.playerId, playerName: state.playerName });
 });
+
 playCardBtn.addEventListener('click', () => {
     if (state.selectedCards.length > 0) {
         sendMessage('playCards', { cardIds: state.selectedCards });
@@ -241,19 +233,23 @@ playCardBtn.addEventListener('click', () => {
         playCardBtn.disabled = true;
     }
 });
+
 challengeBtn.addEventListener('click', () => {
     sendMessage('challenge');
 });
+
 newGameBtn.addEventListener('click', () => {
     if (state.playerId === state.creatorId) {
         sendMessage('startGame');
     }
 });
+
 challengeTimeoutSelect.addEventListener('change', (e) => {
     sendMessage('changeSettings', {
         challengeTimeoutSeconds: e.target.value
     });
 });
+
 window.addEventListener('load', () => {
     state.playerId = localStorage.getItem('zabutonPlayerId') || 'player_' + Math.random().toString(36).substring(2, 9);
     localStorage.setItem('zabutonPlayerId', state.playerId);
