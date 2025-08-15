@@ -50,7 +50,7 @@ const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 // =================================================================================
 // UI更新関数
 // =================================================================================
-function showToast(message, duration = 3000) {
+function showToast(message, duration = 4000) { // 少し長めに変更
     toastEl.textContent = message;
     toastEl.classList.add('show');
     setTimeout(() => toastEl.classList.remove('show'), duration);
@@ -123,16 +123,20 @@ function updateUI(data) {
         playCardBtn.disabled = !isMyTurn || state.selectedCards.length === 0 || gs.challengePhase;
         challengeBtn.disabled = (gs.lastPlayerId === state.playerId) || !gs.challengePhase;
 
+        // ▼▼▼ ここからがご要望の修正点です ▼▼▼
         if (gs.challengeResult) {
-            const { challengerName, wasLie, loserName } = gs.challengeResult;
+            const { challengedName, wasLie, loserName } = gs.challengeResult;
             let msg;
             if (wasLie) {
-                msg = `座布団成功！ ${challengerName}の指摘通り嘘でした！ ${loserName}が場のカードを全て引き取ります。`;
+                // チャレンジ成功（嘘だった）場合のメッセージ
+                msg = `座布団成功！ ${challengedName}は嘘をついていました！ ${loserName}が場のカードを全て引き取ります。`;
             } else {
-                msg = `座布団失敗… プレイは正直でした！ ${loserName}が場のカードを全て引き取ります。`;
+                // チャレンジ失敗（正直だった）場合のメッセージ
+                msg = `座布団失敗… ${challengedName}のプレイは正直でした！ ${loserName}が場のカードを全て引き取ります。`;
             }
-            showToast(msg, 4000);
+            showToast(msg);
         }
+        // ▲▲▲ ここまでがご要望の修正点です ▲▲▲
     }
 
     state.myHand = data.myHand || [];
